@@ -6,6 +6,7 @@ import { parseDate } from '@/utils/parse-date';
 const handler: Route['handler'] = async (ctx) => {
     const fullPath = ctx.req.path;
     const keyword = decodeURIComponent(fullPath.split('/').pop() || '');
+
     const url = `https://comment2434.com/comment/?keyword=${encodeURIComponent(keyword)}&type=0&mode=0&sort_mode=0`;
 
     const headers = {
@@ -32,7 +33,9 @@ const handler: Route['handler'] = async (ctx) => {
         $ = cheerio.load(html);
         rows = $('#result > div');
 
-        if (rows.length > 0) {break;}
+        if (rows.length > 0) {
+            break;
+        }
         // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 1000));
     }
@@ -53,7 +56,9 @@ const handler: Route['handler'] = async (ctx) => {
             const imageSrc = $elem('img').attr('src');
             const imageUrl = imageSrc ? new URL(imageSrc, 'https://comment2434.com').href : '';
 
-            if (!href || !title) {return null;}
+            if (!href || !title) {
+                return null;
+            }
 
             return {
                 title,
@@ -65,17 +70,85 @@ const handler: Route['handler'] = async (ctx) => {
         })
         .filter((item): item is Exclude<typeof item, null> => item !== null);
 
+    const blockedAuthors = [
+        'セラフ・ダズルガーデン',
+        'Kuzuha',
+        'ローレン・イロアス',
+        '渋谷ハジメ',
+        '伏見ガク',
+        '剣持刀也',
+        'Kanae',
+        '花畑チャイカ',
+        '社築',
+        '卯月コウ',
+        '神田笑一',
+        '春崎エアル',
+        '舞元啓介',
+        'でびでび・でびる',
+        'ジョー・力一',
+        'ベルモンド・バンデラス',
+        '夢追翔',
+        '三枝明那',
+        'エクス・アルビオ',
+        '加賀美 ハヤト',
+        'シェリン・バーガンディ',
+        '不破 湊',
+        'グウェル',
+        'ましろ',
+        'イブラヒム',
+        '長尾 景',
+        '弦月 藤士郎',
+        '甲斐田 晴',
+        'ローレン・イロアス',
+        'レオス・ヴィンセント',
+        'オリバー・エバンス',
+        '風楽奏斗',
+        '渡会雲雀',
+        '四季凪アキラ',
+        'セラフ・ダズルガーデン',
+        'ハユン 하윤',
+        '佐伯イッテツ',
+        '赤城ウェン',
+        '宇佐美リト',
+        '緋八マナ',
+        '星導ショウ',
+        '叢雲カゲツ',
+        '小柳ロウ',
+        '伊波ライ',
+        'ミラン・ケストレル',
+        '北見遊征',
+        '魁星',
+        '酒寄颯馬',
+        '渚トラウト',
+        '一橋綾人',
+        '榊ネス',
+        '五木左京',
+        'VΔLZ',
+        'VOLTACTION',
+        'Oriens',
+        '3SKM',
+        'Speciale',
+        'ChroNoiR',
+        'Alban Knox',
+        'Vox Akuma',
+        'Shu Yamino',
+        '민수하',
+        '가온 ガオン',
+    ];
+
+    const filteredItems = items.filter((item) => !blockedAuthors.some((name) => (item.author || '').includes(name)));
+
     return {
         title: `comment2434 - ${keyword}`,
         link: url,
-        item: items,
+        item: filteredItems,
     };
 };
 
 export const route: Route = {
     path: '/:keyword',
     categories: ['live'],
-    example: '/comment2434/猫',
+    example: '/hazimari-comment2434/猫',
     parameters: {
         keyword: '検索キーワード（例：「猫」や「ゲーム」など）',
     },
