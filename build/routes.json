@@ -1,12 +1,12 @@
 {
-  "comment2434": {
+  "hazimari-comment2434": {
     "routes": {
       "/:keyword": {
         "path": "/:keyword",
         "categories": [
           "live"
         ],
-        "example": "/comment2434/猫",
+        "example": "/hazimari-comment2434/猫",
         "parameters": {
           "keyword": "検索キーワード（例：「猫」や「ゲーム」など）"
         },
@@ -16,7 +16,7 @@
           "yourGitHubUsername"
         ],
         "location": "router.ts",
-        "module": "() => import('@/routes/comment2434/router.ts')"
+        "module": "() => import('@/routes/hazimari-comment2434/router.ts')"
       }
     },
     "name": "comment2434",
