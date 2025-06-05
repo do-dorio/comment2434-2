@@ -92,74 +92,18 @@ const handler: Route['handler'] = async (ctx) => {
         })
         .filter((item): item is Exclude<typeof item, null> => item !== null);
 
-    const blockedAuthors = [
-        'セラフ・ダズルガーデン',
-        'Kuzuha',
-        'ローレン・イロアス',
-        '渋谷ハジメ',
-        '伏見ガク',
-        '剣持刀也',
-        'Kanae',
-        '花畑チャイカ',
-        '社築',
-        '卯月コウ',
-        '神田笑一',
-        '春崎エアル',
-        '舞元啓介',
-        'でびでび・でびる',
-        'ジョー・力一',
-        'ベルモンド・バンデラス',
-        '夢追翔',
-        '三枝明那',
-        'エクス・アルビオ',
-        '加賀美 ハヤト',
-        'シェリン・バーガンディ',
-        '不破 湊',
-        'グウェル',
-        'ましろ',
-        'イブラヒム',
-        '長尾 景',
-        '弦月 藤士郎',
-        '甲斐田 晴',
-        'ローレン・イロアス',
-        'レオス・ヴィンセント',
-        'オリバー・エバンス',
-        '風楽奏斗',
-        '渡会雲雀',
-        '四季凪アキラ',
-        'セラフ・ダズルガーデン',
-        'ハユン 하윤',
-        '佐伯イッテツ',
-        '赤城ウェン',
-        '宇佐美リト',
-        '緋八マナ',
-        '星導ショウ',
-        '叢雲カゲツ',
-        '小柳ロウ',
-        '伊波ライ',
-        'ミラン・ケストレル',
-        '北見遊征',
-        '魁星',
-        '酒寄颯馬',
-        '渚トラウト',
-        '一橋綾人',
-        '榊ネス',
-        '五木左京',
-        'VΔLZ',
-        'VOLTACTION',
-        'Oriens',
-        '3SKM',
-        'Speciale',
-        'ChroNoiR',
-        'Alban Knox',
-        'Vox Akuma',
-        'Shu Yamino',
-        '민수하',
-        '가온 ガオン',
-        'Vezalius Bandage',
-    ];
+    let blockList = [];
+    try {
+        const filterURL = 'https://do-dorio.github.io/config-data-filter/assets/9e23x-internal/c2434-bl9e.json';
+        const { data: filterConfig } = await got(filterURL);
 
-    const filteredItems = items.filter((item) => !blockedAuthors.some((name) => (item.author || '').includes(name)));
+        blockList = filterConfig.authorBlocklist ?? [];
+    } catch {
+        // fallbackとして空リストを使う（全通過）
+        blockList = [];
+    }
+
+    const filteredItems = items.filter((item) => !blockList.some((name) => (item.author || '').includes(name)));
 
     memoryCache.set(cacheKey, {
         expire: now + cacheTime * 1000,
