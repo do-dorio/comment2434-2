@@ -71,6 +71,7 @@ const handler: Route['handler'] = async (ctx) => {
             const title = $elem('h5').text().trim();
 
             const dateText = $elem('p').eq(1).text().trim();
+            const description = $elem('p').eq(2).text().trim();
             const cleanDate = dateText.replaceAll(/年|月/g, '-').replaceAll('日', '');
             const pubDate = parseDate(cleanDate);
             const author = $elem('p').eq(0).text().trim(); // ← 1番目が著者名
@@ -84,7 +85,7 @@ const handler: Route['handler'] = async (ctx) => {
             return {
                 title,
                 author,
-                description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${description}` : '',
+                description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${description}` : description,
                 pubDate: pubDate ?? new Date(),
                 link: new URL(href, 'https://comment2434.com').href,
             };
