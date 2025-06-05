@@ -74,7 +74,6 @@ const handler: Route['handler'] = async (ctx) => {
             const cleanDate = dateText.replaceAll(/年|月/g, '-').replaceAll('日', '');
             const pubDate = parseDate(cleanDate);
             const author = $elem('p').eq(0).text().trim(); // ← 1番目が著者名
-
             const imageSrc = $elem('img').attr('src');
             const imageUrl = imageSrc ? new URL(imageSrc, 'https://comment2434.com').href : '';
 
@@ -85,7 +84,7 @@ const handler: Route['handler'] = async (ctx) => {
             return {
                 title,
                 author,
-                description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${description}` : description,
+                description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${description}` : '',
                 pubDate: pubDate ?? new Date(),
                 link: new URL(href, 'https://comment2434.com').href,
             };
