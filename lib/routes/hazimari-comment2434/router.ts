@@ -3,9 +3,28 @@ import got from '@/utils/got';
 import * as cheerio from 'cheerio';
 import { parseDate } from '@/utils/parse-date';
 
+const memoryCache = new Map<string, { expire: number; value: any }>();
+
 const handler: Route['handler'] = async (ctx) => {
-    const fullPath = ctx.req.path;
-    const keyword = decodeURIComponent(fullPath.split('/').pop() || '');
+    // Hono形式でルートパラメータを取得
+    const rawCacheTime = Number.parseInt(ctx.req.param('cacheTime') || '', 10);
+    const keyword = ctx.req.param('keyword') || 'default';
+
+    // 最小60秒に制限、デフォルト3600秒
+    const cacheTime = Number.isNaN(rawCacheTime) ? 3600 : Math.max(60, rawCacheTime);
+
+    // キャッシュキーを構築（cacheTimeを含めて完全分離）
+    const cacheKey = `comment2434:${keyword}:${cacheTime}`;
+    const now = Date.now();
+
+    const cached = memoryCache.get(cacheKey);
+    if (cached && cached.expire > now) {
+        return {
+            title: `Cached - ${keyword}`,
+            link: `https://example.com?q=${keyword}`,
+            item: cached.value,
+        };
+    }
 
     const url = `https://comment2434.com/comment/?keyword=${encodeURIComponent(keyword)}&type=0&mode=0&sort_mode=0`;
 
@@ -50,9 +69,12 @@ const handler: Route['handler'] = async (ctx) => {
             const $elem = cheerio.load(elem);
             const href = $elem('a').attr('href');
             const title = $elem('h5').text().trim();
-            const description = $elem('p').eq(1).text().trim(); // ← 2番目が説明（時刻の前）
-            const dateText = $elem('p').eq(2).text().trim(); // ← 3番目が日時
+
+            const dateText = $elem('p').eq(1).text().trim();
+            const cleanDate = dateText.replaceAll(/年|月/g, '-').replaceAll('日', '');
+            const pubDate = parseDate(cleanDate);
             const author = $elem('p').eq(0).text().trim(); // ← 1番目が著者名
+
             const imageSrc = $elem('img').attr('src');
             const imageUrl = imageSrc ? new URL(imageSrc, 'https://comment2434.com').href : '';
 
@@ -64,7 +86,7 @@ const handler: Route['handler'] = async (ctx) => {
                 title,
                 author,
                 description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${description}` : description,
-                pubDate: parseDate(dateText),
+                pubDate: pubDate ?? new Date(),
                 link: new URL(href, 'https://comment2434.com').href,
             };
         })
@@ -134,9 +156,15 @@ const handler: Route['handler'] = async (ctx) => {
         'Shu Yamino',
         '민수하',
         '가온 ガオン',
+        'Vezalius Bandage',
     ];
 
     const filteredItems = items.filter((item) => !blockedAuthors.some((name) => (item.author || '').includes(name)));
+
+    memoryCache.set(cacheKey, {
+        expire: now + cacheTime * 1000,
+        value: filteredItems,
+    });
 
     return {
         title: `comment2434 - ${keyword}`,
@@ -146,10 +174,11 @@ const handler: Route['handler'] = async (ctx) => {
 };
 
 export const route: Route = {
-    path: '/:keyword',
+    path: '/:cacheTime/:keyword',
     categories: ['live'],
-    example: '/hazimari-comment2434/猫',
+    example: '/hazimari-comment2434/3600/猫',
     parameters: {
+        cacheTime: 'キャッシュ時間（秒）',
         keyword: '検索キーワード（例：「猫」や「ゲーム」など）',
     },
     name: 'Comment2434',
