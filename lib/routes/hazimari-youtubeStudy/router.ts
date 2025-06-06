@@ -6,7 +6,9 @@ const memoryCache = new Map<string, { expire: number; value: any }>();
 function parseYouTubeTimeText(text: string): Date | null {
     const now = new Date();
     const match = text.match(/(\d+)\s*(秒|分|時間|日|週|か月|年)前/);
-    if (!match) {return null;}
+    if (!match) {
+        return null;
+    }
 
     const value = Number.parseInt(match[1], 10);
     const unit = match[2];
@@ -36,17 +38,25 @@ async function fetchYouTubeResults(keyword: string, titleBlockList: string[], au
 
     const response = await got(url, { headers, responseType: 'text' });
     const match = response.body.match(/var ytInitialData = (\{.*?\});<\/script>/);
-    if (!match || !match[1]) {throw new Error('ytInitialData not found');}
+    if (!match || !match[1]) {
+        throw new Error('ytInitialData not found');
+    }
 
     const jsonData = JSON.parse(match[1]);
 
     function extractVideoRenderers(data: any): any[] {
         const results: any[] = [];
         if (Array.isArray(data)) {
-            for (const item of data) {results.push(...extractVideoRenderers(item));}
+            for (const item of data) {
+                results.push(...extractVideoRenderers(item));
+            }
         } else if (typeof data === 'object' && data !== null) {
-            if (data.videoRenderer) {results.push(data.videoRenderer);}
-            for (const value of Object.values(data)) {results.push(...extractVideoRenderers(value));}
+            if (data.videoRenderer) {
+                results.push(data.videoRenderer);
+            }
+            for (const value of Object.values(data)) {
+                results.push(...extractVideoRenderers(value));
+            }
         }
         return results;
     }
@@ -103,13 +113,6 @@ const handler: Route['handler'] = async (ctx) => {
 
     const selected = keywordParam === 'auto' ? available[Math.floor(Math.random() * available.length)] : keywordParam;
 
-    if (keywordParam === 'auto') {
-        memoryCache.set(usedKey, {
-            expire: now + 30 * 86400 * 1000,
-            value: [...used, selected],
-        });
-    }
-
     const cacheKey = `youtubeSearch:${selected}:${cacheTime}`;
     const cached = memoryCache.get(cacheKey);
     if (cached && cached.expire > now) {
@@ -118,6 +121,13 @@ const handler: Route['handler'] = async (ctx) => {
             link: 'https://www.youtube.com/',
             item: cached.value,
         };
+    }
+
+    if (keywordParam === 'auto') {
+        memoryCache.set(usedKey, {
+            expire: now + 30 * 86400 * 1000,
+            value: [...used, selected],
+        });
     }
 
     const results = await fetchYouTubeResults(selected, titleBlockList, authorBlockList);
