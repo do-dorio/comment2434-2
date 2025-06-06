@@ -1,5 +1,8 @@
 {
-  "/hazimari-comment2434/:keyword": [
+  "/hazimari-comment2434/:cacheTime/:keyword": [
+    "yourGitHubUsername"
+  ],
+  "/hazimari-youtubeSearch/:cacheTime/:keyword": [
     "yourGitHubUsername"
   ]
 }
