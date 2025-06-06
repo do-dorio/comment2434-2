@@ -6,7 +6,9 @@ const memoryCache = new Map<string, { expire: number; value: any }>();
 function parseYouTubeTimeText(text: string): Date | null {
     const now = new Date();
     const match = text.match(/(\d+)\s*(秒|分|時間|日|週|か月|年)前/);
-    if (!match) {return null;}
+    if (!match) {
+        return null;
+    }
 
     const value = Number.parseInt(match[1], 10);
     const unit = match[2];
@@ -36,41 +38,58 @@ async function fetchYouTubeResults(keyword: string) {
 
     const response = await got(url, { headers, responseType: 'text' });
     const match = response.body.match(/var ytInitialData = (\{.*?\});<\/script>/);
-    if (!match || !match[1]) {throw new Error('ytInitialData not found');}
+    if (!match || !match[1]) {
+        throw new Error('ytInitialData not found');
+    }
 
     const jsonData = JSON.parse(match[1]);
     const extractVideoRenderers = (data: any): any[] => {
         const results: any[] = [];
         if (Array.isArray(data)) {
-            for (const item of data) {results.push(...extractVideoRenderers(item));}
+            for (const item of data) {
+                results.push(...extractVideoRenderers(item));
+            }
         } else if (typeof data === 'object' && data !== null) {
-            if (data.videoRenderer) {results.push(data.videoRenderer);}
-            for (const value of Object.values(data)) {results.push(...extractVideoRenderers(value));}
+            if (data.videoRenderer) {
+                results.push(data.videoRenderer);
+            }
+            for (const value of Object.values(data)) {
+                results.push(...extractVideoRenderers(value));
+            }
         }
         return results;
     };
 
     const videoRenderers = extractVideoRenderers(jsonData);
 
-    return videoRenderers.map((renderer) => {
-        const videoId = renderer.videoId;
-        const title = renderer.title?.runs?.[0]?.text || 'No Title';
-        const author = renderer.ownerText?.runs?.[0]?.text || 'Unknown';
-        const desc = renderer.detailedMetadataSnippets?.[0]?.snippetText?.runs?.map((r: any) => r.text).join('') || '';
-        const imageUrl = renderer.thumbnail?.thumbnails?.[0]?.url || '';
-        const link = `https://www.youtube.com/watch?v=${videoId}`;
-        const pubText = renderer.publishedTimeText?.simpleText || '';
-        const pubDate = parseYouTubeTimeText(pubText) || new Date();
+    return videoRenderers
+        .map((renderer) => {
+            const durationText = renderer.lengthText?.simpleText || '';
+            if (durationText) {
+                const [minStr, secStr] = durationText.split(':').map((s) => s.trim());
+                const durationSec = (Number(minStr) || 0) * 60 + (Number(secStr) || 0);
+                if (durationSec <= 180) {return null;}
+            }
 
-        return {
-            title,
-            author,
-            description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${desc}` : desc,
-            pubDate,
-            link,
-            rawPubText: pubText,
-        };
-    });
+            const videoId = renderer.videoId;
+            const title = renderer.title?.runs?.[0]?.text || 'No Title';
+            const author = renderer.ownerText?.runs?.[0]?.text || 'Unknown';
+            const desc = renderer.detailedMetadataSnippets?.[0]?.snippetText?.runs?.map((r: any) => r.text).join('') || '';
+            const imageUrl = renderer.thumbnail?.thumbnails?.[0]?.url || '';
+            const link = `https://www.youtube.com/watch?v=${videoId}`;
+            const pubText = renderer.publishedTimeText?.simpleText || '';
+            const pubDate = parseYouTubeTimeText(pubText) || new Date();
+
+            return {
+                title,
+                author,
+                description: imageUrl ? `<img src="${imageUrl}" referrerpolicy="no-referrer"><br>${desc}` : desc,
+                pubDate,
+                link,
+                rawPubText: pubText,
+            };
+        })
+        .filter(Boolean);
 }
 
 const handler: Route['handler'] = async (ctx) => {
@@ -121,7 +140,9 @@ const handler: Route['handler'] = async (ctx) => {
         .filter((item) => !authorBlockList.some((name) => (item.author || '').includes(name)))
         .filter((item) => !titleBlockList.some((name) => (item.title || '').includes(name)))
         .filter((item) => {
-            if (!item.rawPubText || item.rawPubText.includes('ライブ')) {return true;}
+            if (!item.rawPubText || item.rawPubText.includes('ライブ')) {
+                return true;
+            }
             const time = item.pubDate instanceof Date ? item.pubDate.getTime() : 0;
             return Date.now() - time <= 48 * 60 * 60 * 1000;
         });

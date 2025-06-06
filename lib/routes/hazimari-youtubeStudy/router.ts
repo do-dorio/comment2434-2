@@ -65,6 +65,13 @@ async function fetchYouTubeResults(keyword: string, titleBlockList: string[], au
 
     return videoRenderers
         .map((renderer) => {
+            const durationText = renderer.lengthText?.simpleText || '';
+            if (durationText) {
+                const [minStr, secStr] = durationText.split(':').map((s) => s.trim());
+                const durationSec = (Number(minStr) || 0) * 60 + (Number(secStr) || 0);
+                if (durationSec <= 180) {return null;}
+            }
+
             const videoId = renderer.videoId;
             const title = renderer.title?.runs?.[0]?.text || 'No Title';
             const author = renderer.ownerText?.runs?.[0]?.text || 'Unknown';
@@ -83,6 +90,7 @@ async function fetchYouTubeResults(keyword: string, titleBlockList: string[], au
                 rawPubText: pubText,
             };
         })
+        .filter(Boolean)
         .filter((item) => !titleBlockList.some((word) => item.title.includes(word)))
         .filter((item) => !authorBlockList.some((word) => item.author.includes(word)));
 }
