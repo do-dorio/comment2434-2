@@ -4,5 +4,8 @@
   ],
   "/hazimari-youtubeSearch/:cacheTime/:keyword": [
     "yourGitHubUsername"
+  ],
+  "/hazimari-youtubeStudy/:cacheTime/:keyword": [
+    "yourGitHubUsername"
   ]
 }

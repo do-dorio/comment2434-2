@@ -48,5 +48,30 @@ export default {
     "name": "youtubeSearch",
     "url": "https://youtube.com/",
     "description": "youtube検索 の RSS フィード"
+  },
+  "hazimari-youtubeStudy": {
+    "routes": {
+      "/:cacheTime/:keyword": {
+        "path": "/:cacheTime/:keyword",
+        "categories": [
+          "study"
+        ],
+        "example": "/hazimari-youtubeStudy/3600/auto",
+        "parameters": {
+          "cacheTime": "キャッシュ時間（秒）",
+          "keyword": "検索キーワード。\"auto\" にすると語句リストからランダム選出されます。"
+        },
+        "name": "Hazimari Youtube Study",
+        "url": "youtube.com",
+        "maintainers": [
+          "yourGitHubUsername"
+        ],
+        "location": "router.ts",
+        "module": () => import('@/routes/hazimari-youtubeStudy/router.ts')
+      }
+    },
+    "name": "youtubeStady",
+    "url": "https://youtube.com/",
+    "description": "youtubeの 検索のRSS フィード"
   }
 }
